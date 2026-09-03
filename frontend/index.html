@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRINETRA || त्रिनेत्र || Tactical ASDA Ground Station</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="tactical-body">
+  <!-- Master Header -->
+  <header class="tactical-header">
+    <div class="header-left">
+      <div class="brand-badge">TRINETRA-ASDA</div>
+      <div class="brand-title">
+        <h1>T. R. I. N. E. T. R. A. <span class="sanskrit">|| त्रिनेत्र ||</span></h1>
+        <span class="sub-brand">Tactical Radio Intelligence Network for Electromagnetic Tracking Reconnaissance & Analysis</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="station-telemetry">
+        <div class="telemetry-pill">
+          <span class="label">GROUND STATION:</span>
+          <span class="value" id="val-station">MESRA, RANCHI (VERC)</span>
+        </div>
+        <div class="telemetry-pill">
+          <span class="label">GEOLOC:</span>
+          <span class="value">23.4123°N, 85.4399°E | 650m ASL</span>
+        </div>
+        <div class="telemetry-pill">
+          <span class="label">TMPFS RAM:</span>
+          <span class="value highlight-cyan">/run/readsb [WEAR-LVL ACTIVE]</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="clock-block">
+        <div class="time-row"><span class="clock-label">UTC:</span> <span id="clock-utc">00:00:00Z</span></div>
+        <div class="time-row"><span class="clock-label">IST:</span> <span id="clock-ist">00:00:00+05:30</span></div>
+      </div>
+      <div class="mode-switch-wrapper">
+        <button id="btn-mode-toggle" class="btn-mode mode-sim" title="Click to toggle Simulation vs Physical Hardware readsb ingestion">
+          <span class="indicator-dot"></span>
+          <span id="txt-mode">MODE: SIMULATION</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Tactical Workspace -->
+  <main class="tactical-grid">
+    
+    <!-- Left: Air Domain Primary Tactical Radar (1090 MHz) -->
+    <section class="panel-air-domain">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="domain-tag air">AIR DOMAIN [PHASE 1]</span>
+          <h2>1090 MHz MODE-S / ADS-B COOPERATIVE RADAR</h2>
+        </div>
+        <div class="panel-stats">
+          <span class="stat-item"><strong id="stat-air-tracks">0</strong> ACTIVE TARGETS</span>
+          <span class="stat-item alert-danger"><strong id="stat-quarantined">0</strong> QUARANTINED</span>
+          <span class="stat-item alert-warning"><strong id="stat-conflicts">0</strong> CPA CONFLICTS</span>
+        </div>
+      </div>
+
+      <!-- Radar Display Canvas Container -->
+      <div class="radar-container" id="radar-container">
+        <canvas id="radar-canvas"></canvas>
+        
+        <!-- Tactical HUD Overlays -->
+        <div class="radar-hud-overlay top-left">
+          <div class="hud-box">
+            <div class="hud-title">RF FRONTEND</div>
+            <div class="hud-value">AirNav FlightStick</div>
+            <div class="hud-sub">SAW + LNA | 5.5 dBi Collinear</div>
+            <div class="hud-sub">ADC: 2.4 MSPS DMA Buffer</div>
+          </div>
+        </div>
+
+        <div class="radar-hud-overlay top-right">
+          <div class="hud-box">
+            <div class="hud-title">DEFENSE GATING (SEC 5.1)</div>
+            <div class="hud-sub">MAX LATERAL ACCEL: 30.0 m/s²</div>
+            <div class="hud-sub">MAX VERT CLIMB: 6g (58.8 m/s²)</div>
+            <div class="hud-sub">MAX CIVIL SPEED: 620 KTS</div>
+            <div class="hud-sub">QNH DIVERGENCE: 800 FT</div>
+          </div>
+        </div>
+
+        <div class="radar-hud-overlay bottom-left">
+          <div class="radar-legend">
+            <span class="leg-item"><span class="leg-dot green"></span> Civil Target</span>
+            <span class="leg-item"><span class="leg-dot yellow"></span> CPA / Separation Alert</span>
+            <span class="leg-item"><span class="leg-dot red blink"></span> Quarantined Spoof (HackRF)</span>
+            <span class="leg-item"><span class="leg-boundary"></span> Ranchi VERC CTR / Geofence</span>
+          </div>
+        </div>
+
+        <div class="radar-hud-overlay bottom-right">
+          <div class="radar-controls">
+            <button id="btn-zoom-in" class="btn-tool" title="Zoom In">+</button>
+            <button id="btn-zoom-out" class="btn-tool" title="Zoom Out">−</button>
+            <button id="btn-reset-view" class="btn-tool" title="Center Mesra">⌖</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Target Detail & ASTERIX Telemetry Drawer -->
+      <div class="target-drawer" id="target-drawer">
+        <div class="drawer-header">
+          <div class="drawer-title">
+            <span class="target-hex" id="det-hex">HEX: ------</span>
+            <span class="target-callsign" id="det-callsign">CALLSIGN: ------</span>
+            <span class="target-badge" id="det-status-badge">STATUS: IDLE</span>
+          </div>
+          <button id="btn-close-drawer" class="btn-close">&times;</button>
+        </div>
+
+        <div class="drawer-grid">
+          <div class="telemetry-card">
+            <h4>KINEMATICS & DERIVATIVES (SEC 5.1)</h4>
+            <div class="metric-row"><span class="m-lbl">Position:</span> <span class="m-val" id="det-pos">--.----°N, --.----°E</span></div>
+            <div class="metric-row"><span class="m-lbl">Altitude Baro / Geom:</span> <span class="m-val" id="det-alt">-- ft / -- ft</span></div>
+            <div class="metric-row"><span class="m-lbl">QNH Divergence (|Δh|):</span> <span class="m-val" id="det-qnh">-- ft</span></div>
+            <div class="metric-row"><span class="m-lbl">Ground Speed / Track:</span> <span class="m-val" id="det-spd">-- kts / --°</span></div>
+            <div class="metric-row"><span class="m-lbl">Acceleration (Total / Lat):</span> <span class="m-val highlight" id="det-accel">-- m/s²</span></div>
+            <div class="metric-row"><span class="m-lbl">Kinematic Jerk (da/dt):</span> <span class="m-val" id="det-jerk">-- m/s³</span></div>
+            <div class="metric-row"><span class="m-lbl">Vertical Climb Rate:</span> <span class="m-val" id="det-vert">-- fpm (-- m/s²)</span></div>
+          </div>
+
+          <div class="telemetry-card">
+            <h4>TACTICAL INTEROPERABILITY (ASTERIX CAT 021 - SEC 5.6)</h4>
+            <div class="metric-row"><span class="m-lbl">SAC / SIC:</span> <span class="m-val" id="det-asterix-sac">0x42 / 0x07 (Mesra)</span></div>
+            <div class="metric-row"><span class="m-lbl">Target Address:</span> <span class="m-val" id="det-asterix-addr">--</span></div>
+            <div class="metric-row"><span class="m-lbl">Flight Level:</span> <span class="m-val" id="det-asterix-fl">FL---</span></div>
+            <div class="metric-row"><span class="m-lbl">Binary Record Length:</span> <span class="m-val" id="det-asterix-len">-- bytes</span></div>
+            <div class="asterix-hex-container">
+              <span class="hex-label">RAW CAT 021 HEX STREAM:</span>
+              <pre class="hex-stream" id="det-asterix-hex">SELECT TARGET FOR ASTERIX STREAM</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: Space Domain Interceptor (137 MHz) & Spectrum EW -->
+    <aside class="panel-space-domain">
+      
+      <!-- Space Domain Header -->
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="domain-tag space">SPACE DOMAIN [PHASE 1]</span>
+          <h2>137 MHz VHF LEO WEATHER SATELLITE INTERCEPTOR</h2>
+        </div>
+      </div>
+
+      <!-- Satellite Orbit & Doppler Tracker -->
+      <div class="space-card orbit-tracker">
+        <div class="card-headline">
+          <span class="sat-name" id="sat-active-name">NOAA 19 (NORAD 33591)</span>
+          <span class="sat-freq" id="sat-active-freq">137.1000 MHz APT</span>
+          <span class="sat-badge" id="sat-visibility-badge">AOS VISIBLE</span>
+        </div>
+
+        <div class="subsat-data-grid">
+          <div class="data-cell">
+            <span class="cell-lbl">SUB-SAT LAT/LON</span>
+            <span class="cell-val" id="sat-sub-pos">--.----°, --.----°</span>
+          </div>
+          <div class="data-cell">
+            <span class="cell-lbl">ALTITUDE</span>
+            <span class="cell-val">~850 km (Sun-Sync)</span>
+          </div>
+          <div class="data-cell">
+            <span class="cell-lbl">AZIMUTH / ELEV</span>
+            <span class="cell-val highlight-cyan" id="sat-az-el">---° / --°</span>
+          </div>
+          <div class="data-cell">
+            <span class="cell-lbl">SLANT RANGE</span>
+            <span class="cell-val" id="sat-slant-range">---- km</span>
+          </div>
+        </div>
+
+        <!-- Doppler Shift Graph & rigctl AFC -->
+        <div class="doppler-display">
+          <div class="doppler-header">
+            <span class="d-title">DOPPLER SHIFT & rigctl AFC (SEC 3.1)</span>
+            <span class="d-val" id="sat-doppler-val">Δf: +0.0 kHz</span>
+          </div>
+          <div class="freq-bar-wrapper">
+            <div class="freq-axis">
+              <span>-4.5 kHz</span>
+              <span>137.100 MHz (f₀)</span>
+              <span>+4.5 kHz</span>
+            </div>
+            <div class="freq-bar-track">
+              <div class="freq-marker" id="sat-freq-marker"></div>
+            </div>
+            <div class="freq-status">
+              <span>RX TUNED: <strong id="sat-rx-freq">137.100000 MHz</strong></span>
+              <span>rigctl STEP: <strong id="sat-rigctl-step">0.0 kHz</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4.2 Theoretical Link Budget -->
+        <div class="link-budget-section">
+          <div class="lb-header">
+            <span>THEORETICAL RF LINK BUDGET (SEC 4.2)</span>
+            <span class="snr-badge" id="sat-snr-badge">SNR: 19.4 dB</span>
+          </div>
+          <div class="lb-grid">
+            <div class="lb-item"><span>Path Loss (L_fs):</span> <strong id="lb-lfs">141.1 dB</strong></div>
+            <div class="lb-item"><span>Recv Power (P_r):</span> <strong id="lb-pr">-99.6 dBm</strong></div>
+            <div class="lb-item"><span>Noise Floor (N):</span> <strong>-119.0 dBm</strong></div>
+            <div class="lb-item"><span>Antenna:</span> <strong>120° V-Dipole (53.4cm)</strong></div>
+          </div>
+        </div>
+
+        <!-- Demodulated SatDump APT Imagery Preview -->
+        <div class="satdump-container">
+          <div class="satdump-header">
+            <span>SatDump MULTI-SPECTRAL COMPOSITE (HIMALAYAS → SRI LANKA)</span>
+            <button id="btn-view-image" class="btn-subtle">Full Image</button>
+          </div>
+          <div class="satdump-preview-box">
+            <img id="img-satdump-composite" src="/api/space/imagery/latest" alt="SatDump NOAA 19 Composite">
+            <div class="image-label">CH-A VISIBLE (0.63µm) &nbsp;|&nbsp; CH-B THERMAL IR (10.8µm)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wideband RF Spectrum & Jammer Monitor (Section 5.5) -->
+      <div class="space-card spectrum-card">
+        <div class="card-headline">
+          <span>WIDEBAND RF SPECTRUM & JAMMER DETECTION (SEC 5.5)</span>
+          <span class="jammer-status-badge nominal" id="jammer-badge">SPECTRUM NOMINAL</span>
+        </div>
+        
+        <div class="spectrum-canvases">
+          <div class="spec-col">
+            <span class="spec-label">1090 MHz MODE-S BAND</span>
+            <canvas id="canvas-spec-1090" width="300" height="75"></canvas>
+          </div>
+          <div class="spec-col">
+            <span class="spec-label">137 MHz VHF WEATHER BAND</span>
+            <canvas id="canvas-spec-137" width="300" height="75"></canvas>
+          </div>
+        </div>
+
+        <div class="spectrum-footer">
+          <span id="spec-floor-info">NOISE FLOOR: -119.0 dBm | NO ACTIVE ELECTRONIC ATTACK</span>
+        </div>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <!-- Bottom Interactive Threat & Scenario Control Toolbar -->
+  <footer class="tactical-toolbar">
+    <div class="toolbar-label">
+      <span class="icon">⚙️</span>
+      <strong>TRINETRA THREAT SIMULATION & INGESTION CONTROLS:</strong>
+    </div>
+
+    <div class="toolbar-actions">
+      <button class="btn-threat btn-hackrf" id="btn-inject-hackrf" title="Injects a synthetic Mode-S injection executing impossible 8g climb and 50 m/s² lateral acceleration">
+        ⚡ INJECT HACKRF SPOOF (8g / ACCEL)
+      </button>
+
+      <button class="btn-threat btn-qnh" id="btn-inject-qnh" title="Injects an aircraft with severe geometric vs barometric altitude divergence (>2000 ft)">
+        ⚠️ INJECT QNH TAMPER (|Δh| > 2000ft)
+      </button>
+
+      <button class="btn-threat btn-conflict" id="btn-inject-conflict" title="Spawns head-on converging tracks violating 5 NM / 1000 ft separation">
+        ⚔️ INJECT AIRSPACE CONFLICT (< 2 NM)
+      </button>
+
+      <button class="btn-threat btn-incursion" id="btn-inject-incursion" title="Spawns an unauthorized target breaching Mesra Ground Station 5 km perimeter">
+        🛡️ INJECT MESRA PERIMETER INCURSION
+      </button>
+
+      <button class="btn-threat btn-jammer" id="btn-inject-jammer" title="Simulates high-power broadband noise jamming elevating noise floor by 30 dB">
+        📡 INJECT RF JAMMER (BROADBAND)
+      </button>
+
+      <button class="btn-threat btn-clear" id="btn-clear-threats" title="Removes all injected scenarios and restores clean operational traffic">
+        🔄 RESET / CLEAR ALL
+      </button>
+    </div>
+  </footer>
+
+  <!-- Modal for Full Satellite Image -->
+  <div class="modal-overlay" id="image-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>PROJECT TRINETRA - SATDUMP NOAA 19 MULTI-SPECTRAL COMPOSITE</h3>
+        <button id="btn-close-modal" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <img src="/api/space/imagery/latest" alt="SatDump Full Satellite Composite" class="modal-full-img">
+      </div>
+    </div>
+  </div>
+
+  <script src="tactical_c2.js"></script>
+</body>
+</html>
