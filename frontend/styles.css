@@ -278,17 +278,120 @@ body.tactical-body {
   position: relative;
   background: #04070e;
   overflow: hidden;
+  min-height: 380px;
 }
 
-#radar-canvas {
+#map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 100%;
-  display: block;
+  background: #04070e;
+  z-index: 1;
+}
+
+/* Custom Leaflet Dark Aesthetic */
+.leaflet-container {
+  background: #04070e !important;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+.leaflet-bar {
+  border: 1px solid #1e293b !important;
+  box-shadow: none !important;
+}
+
+.leaflet-bar a {
+  background-color: #0f172a !important;
+  color: #00f0ff !important;
+  border-bottom: 1px solid #1e293b !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: #1e293b !important;
+  color: #fff !important;
+}
+
+/* Ensure Leaflet div icons have no default white box/border */
+.leaflet-div-icon,
+.custom-plane-divicon,
+.range-label-icon,
+.station-marker-icon {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure custom icons have transparent background */
+.plane-marker-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.plane-svg-icon {
+  width: 26px;
+  height: 26px;
+  transition: transform 0.4s linear;
+}
+
+.plane-svg-icon.civil {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 6px #00ff88);
+}
+
+.plane-svg-icon.conflict {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 8px #ffaa00);
+}
+
+.plane-svg-icon.spoof {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 10px #ff2255);
+  animation: blink-anim 0.6s infinite alternate;
+}
+
+.plane-datablock {
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid #00ff88;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  margin-top: 2px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.75);
+  pointer-events: none;
+}
+
+.plane-datablock.conflict {
+  border-color: #ffaa00;
+  color: #ffaa00;
+}
+
+.plane-datablock.spoof {
+  border-color: #ff2255;
+  color: #ff2255;
+}
+
+.station-pulse-pin {
+  width: 10px;
+  height: 10px;
+  background: #00f0ff;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00f0ff;
+  animation: pulse-glow 1.5s infinite;
 }
 
 .radar-hud-overlay {
   position: absolute;
   pointer-events: none;
+  z-index: 1000;
 }
 
 .radar-hud-overlay.top-left { top: 12px; left: 12px; }
