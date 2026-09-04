@@ -37,18 +37,22 @@
   const statConflicts = document.getElementById('stat-conflicts');
 
   // Space Elements
+  // Weather Satellite & Meteorological Elements
   const satActiveName = document.getElementById('sat-active-name');
   const satActiveFreq = document.getElementById('sat-active-freq');
-  const satSubPos = document.getElementById('sat-sub-pos');
-  const satAzEl = document.getElementById('sat-az-el');
-  const satSlantRange = document.getElementById('sat-slant-range');
-  const satDopplerVal = document.getElementById('sat-doppler-val');
-  const satRxFreq = document.getElementById('sat-rx-freq');
-  const satRigctlStep = document.getElementById('sat-rigctl-step');
-  const satFreqMarker = document.getElementById('sat-freq-marker');
-  const satSnrBadge = document.getElementById('sat-snr-badge');
-  const lbLfs = document.getElementById('lb-lfs');
-  const lbPr = document.getElementById('lb-pr');
+  const satIngestBadge = document.getElementById('sat-ingest-badge');
+  const satLineSync = document.getElementById('sat-line-sync');
+  const satSnrVal = document.getElementById('sat-snr-val');
+  const satPowerVal = document.getElementById('sat-power-val');
+
+  const metStormBadge = document.getElementById('met-storm-badge');
+  const metCloudTemp = document.getElementById('met-cloud-temp');
+  const metSurfaceTemp = document.getElementById('met-surface-temp');
+  const metMoisture = document.getElementById('met-moisture');
+  const metCloudCover = document.getElementById('met-cloud-cover');
+  const metCh1Albedo = document.getElementById('met-ch1-albedo');
+  const metCh2Ndvi = document.getElementById('met-ch2-ndvi');
+  const metCh4Temp = document.getElementById('met-ch4-temp');
   const jammerBadge = document.getElementById('jammer-badge');
   const specFloorInfo = document.getElementById('spec-floor-info');
 
@@ -383,26 +387,42 @@
       }
     }
 
-    // Space Domain Interceptor (if active in payload)
+    // Weather Satellite & Meteorological Telemetry
     if (data.space_domain && satActiveName) {
       const sp = data.space_domain;
-      satActiveName.innerText = `${sp.active_satellite} (NORAD ${sp.norad_id})`;
-      satActiveFreq.innerText = `${sp.kinematics.nominal_freq_mhz.toFixed(4)} MHz ${sp.mode}`;
-      satSubPos.innerText = `${sp.subsatellite_lat.toFixed(2)}°N, ${sp.subsatellite_lon.toFixed(2)}°E`;
-      satAzEl.innerText = `${sp.kinematics.azimuth_deg}° / ${sp.kinematics.elevation_deg}°`;
-      satSlantRange.innerText = `${sp.kinematics.slant_range_km} km`;
+      const dl = sp.downlink || {};
+      const met = sp.meteorological_telemetry || {};
+      const ch = sp.sensor_channels || {};
 
-      const dKhz = sp.kinematics.doppler_shift_hz / 1000.0;
-      satDopplerVal.innerText = `Δf: ${dKhz > 0 ? '+' : ''}${dKhz.toFixed(2)} kHz`;
-      satRxFreq.innerText = `${sp.kinematics.rx_corrected_freq_mhz.toFixed(6)} MHz`;
-      satRigctlStep.innerText = `${sp.kinematics.rigctl_step_khz.toFixed(2)} kHz`;
+      // Downlink Health
+      satActiveName.innerText = `${sp.satellite_id} (${sp.sensor_payload || 'AVHRR'})`;
+      satActiveFreq.innerText = `${dl.frequency_mhz?.toFixed(4) || '137.1000'} MHz ${dl.modulation || 'APT'}`;
+      if (satIngestBadge) satIngestBadge.innerText = dl.carrier_state || 'CARRIER LOCKED';
+      if (satLineSync) satLineSync.innerText = dl.line_sync_state || '2080 px/line (100% SYNC)';
+      if (satSnrVal) satSnrVal.innerText = `${dl.snr_db || 19.4} dB`;
+      if (satPowerVal) satPowerVal.innerText = `${dl.received_power_dbm || -99.6} dBm / ${dl.noise_floor_dbm || -119} dBm`;
 
-      const markerPct = Math.max(5, Math.min(95, 50 + (dKhz / 4.5) * 45));
-      satFreqMarker.style.left = `${markerPct}%`;
+      // Real-time Meteorological Readouts
+      if (metCloudTemp) metCloudTemp.innerText = `${met.cloud_top_temperature_c > 0 ? '+' : ''}${met.cloud_top_temperature_c?.toFixed(1)}°C`;
+      if (metSurfaceTemp) metSurfaceTemp.innerText = `+${met.surface_skin_temperature_c?.toFixed(1)}°C`;
+      if (metMoisture) metMoisture.innerText = `${met.precipitable_water_moisture_mm?.toFixed(1)} mm`;
+      if (metCloudCover) metCloudCover.innerText = `${met.regional_cloud_cover_pct?.toFixed(1)}%`;
 
-      lbLfs.innerText = `${sp.kinematics.free_space_loss_db} dB`;
-      lbPr.innerText = `${sp.kinematics.received_power_dbm} dBm`;
-      satSnrBadge.innerText = `SNR: ${sp.kinematics.snr_db} dB`;
+      if (metStormBadge) {
+        metStormBadge.innerText = (met.convective_status || 'NOMINAL').replace(/_/g, ' ');
+        if (met.alert_level === 'WARNING') {
+          metStormBadge.className = 'met-badge alert-warning';
+        } else if (met.alert_level === 'ADVISORY') {
+          metStormBadge.className = 'met-badge alert-advisory';
+        } else {
+          metStormBadge.className = 'met-badge alert-nominal';
+        }
+      }
+
+      // Radiometer Spectral Channels
+      if (metCh1Albedo && ch.ch1_visible) metCh1Albedo.innerText = `Albedo: ${ch.ch1_visible.measured_albedo_pct}%`;
+      if (metCh2Ndvi && ch.ch2_near_ir) metCh2Ndvi.innerText = `NDVI: ${ch.ch2_near_ir.ndvi_index}`;
+      if (metCh4Temp && ch.ch4_thermal_ir) metCh4Temp.innerText = `Brightness: ${ch.ch4_thermal_ir.brightness_temp_c}°C`;
     }
 
     // RF Spectrum & Jammer Status (Section 5.5)

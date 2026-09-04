@@ -686,104 +686,159 @@ body.tactical-body {
   color: #f8fafc;
 }
 
-/* Doppler S-Curve */
-.doppler-display {
+/* ==========================================================================
+   Meteorological & Weather Satellite Telemetry Styles
+   ========================================================================== */
+
+.met-telemetry-section {
   background: #090e1a;
   border: 1px solid #1a2234;
-  padding: 8px;
+  padding: 8px 10px;
   border-radius: 4px;
   margin-bottom: 10px;
 }
 
-.doppler-header {
+.met-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 10px;
-  margin-bottom: 4px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 4px;
 }
 
-.d-title { color: var(--text-secondary); font-weight: 600; }
-.d-val { color: var(--cyan-bright); font-weight: 700; }
+.met-title {
+  color: #fff;
+  letter-spacing: 0.5px;
+}
 
-.freq-bar-wrapper {
+.met-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.met-badge.alert-advisory {
+  background: rgba(255, 170, 0, 0.15);
+  color: var(--amber-alert);
+  border: 1px solid var(--amber-alert);
+}
+
+.met-badge.alert-warning {
+  background: rgba(255, 34, 85, 0.2);
+  color: var(--red-threat);
+  border: 1px solid var(--red-threat);
+  animation: blink-anim 0.8s infinite alternate;
+}
+
+.met-badge.alert-nominal {
+  background: rgba(0, 255, 136, 0.15);
+  color: var(--green-tactical);
+  border: 1px solid var(--green-tactical);
+}
+
+.met-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.met-card {
+  background: #0d1424;
+  border: 1px solid #1e293b;
+  padding: 6px 8px;
+  border-radius: 3px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
 
-.freq-axis {
-  display: flex;
-  justify-content: space-between;
+.met-card .m-title {
+  font-size: 8.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.met-card .m-big-val {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  margin: 2px 0;
+}
+
+.met-card .m-big-val.cold {
+  color: #60a5fa;
+  text-shadow: 0 0 6px rgba(96, 165, 250, 0.4);
+}
+
+.met-card .m-big-val.warm {
+  color: #fb923c;
+  text-shadow: 0 0 6px rgba(251, 146, 60, 0.4);
+}
+
+.met-card .m-big-val.cyan {
+  color: var(--cyan-bright);
+}
+
+.met-card .m-desc {
   font-size: 8px;
   color: var(--text-muted);
 }
 
-.freq-bar-track {
-  height: 8px;
-  background: #1e293b;
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
-}
-
-.freq-marker {
-  width: 14px;
-  height: 100%;
-  background: var(--purple-space);
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  border-radius: 2px;
-  box-shadow: 0 0 6px var(--purple-space);
-  transition: left 0.3s linear;
-}
-
-.freq-status {
-  display: flex;
-  justify-content: space-between;
-  font-size: 9px;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-.freq-status strong { color: var(--text-primary); }
-
-/* Link Budget */
-.link-budget-section {
-  background: #090e1a;
-  border: 1px solid #1a2234;
-  padding: 8px;
-  border-radius: 4px;
-  margin-bottom: 10px;
-}
-
-.lb-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
-}
-
-.snr-badge {
-  background: rgba(0, 240, 255, 0.15);
-  color: var(--cyan-bright);
-  border: 1px solid var(--cyan-bright);
-  padding: 1px 6px;
+/* Multi-Spectral Radiometer Channels */
+.radiometer-channels {
+  background: #070b14;
+  border: 1px solid #162035;
+  padding: 6px 8px;
   border-radius: 3px;
+}
+
+.rad-label {
+  font-size: 8.5px;
+  color: var(--cyan-bright);
+  font-weight: 700;
+  display: block;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.channel-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ch-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9px;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.ch-row:last-child {
+  border-bottom: none;
+}
+
+.ch-name {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.ch-val {
+  color: #f1f5f9;
   font-weight: 700;
 }
 
-.lb-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  font-size: 10px;
+.ch-info {
+  color: var(--text-muted);
+  font-size: 8px;
 }
-
-.lb-item span { color: var(--text-muted); }
-.lb-item strong { color: var(--text-primary); }
 
 /* SatDump Imagery */
 .satdump-container {

@@ -1,59 +1,61 @@
 """
-Unit tests for Space Domain LEO Interception, Doppler Shift, and Link Budget (Section 3.1 & 4.2).
+Unit tests for Weather Satellite Telemetry & Meteorological Data Processing.
 """
 
 import unittest
-from backend.simulators.space_domain_sim import SpaceDomainSimulator, SatelliteTarget
+from backend.simulators.space_domain_sim import WeatherSatelliteDataProcessor
 
-class TestSpaceDomain(unittest.TestCase):
+class TestWeatherSatelliteDomain(unittest.TestCase):
     
     def setUp(self):
-        self.sim = SpaceDomainSimulator()
+        self.processor = WeatherSatelliteDataProcessor()
 
-    def test_theoretical_link_budget_at_2000km(self):
-        """
-        Validates the exact link budget analysis from Section 4.2 of the report:
-        Slant range d = 2000 km, f = 137 MHz
-        L_fs ≈ 141.1 dB
-        P_r ≈ -99.6 dBm
-        N ≈ -119.0 dBm
-        SNR ≈ 19.4 dB
-        """
-        sat = SatelliteTarget("NOAA APT Test", 99999, 137.0, "APT", tx_power_dbm=37.0, ant_gain_dbi=4.0)
+    def test_downlink_telemetry_structure(self):
+        """Verifies weather satellite downlink telemetry parameters."""
+        data = self.processor.get_meteorological_telemetry()
+        self.assertEqual(data["satellite_id"], "NOAA 19")
+        self.assertIn("AVHRR", data["sensor_payload"])
         
-        # Test kinematic calculation with synthetic position yielding 2000 km range
-        # Use direct formula verification
-        d_km = 2000.0
-        f_mhz = 137.0
-        
-        l_fs = 20.0 * 3.30103 + 20.0 * 2.13672 + 32.44 # 66.02 + 42.73 + 32.44 = 141.19 dB
-        self.assertAlmostEqual(l_fs, 141.19, delta=0.2)
-        
-        # Received power: P_r = 37 + 4 + 2 - 1.5 - 141.19 = -99.69 dBm
-        p_r = 37.0 + 4.0 + 2.0 - 1.5 - l_fs
-        self.assertAlmostEqual(p_r, -99.69, delta=0.3)
-        
-        # Thermal noise floor
-        n = self.sim.thermal_noise_dbm
-        self.assertAlmostEqual(n, -119.0, delta=0.5)
-        
-        # SNR
-        snr = p_r - n
-        self.assertAlmostEqual(snr, 19.4, delta=0.5)
+        dl = data["downlink"]
+        self.assertEqual(dl["frequency_mhz"], 137.1000)
+        self.assertEqual(dl["carrier_state"], "LOCKED_RECEIVING")
+        self.assertIn("2080 px/line", dl["line_sync_state"])
+        self.assertGreater(dl["snr_db"], 10.0)
 
-    def test_satellite_pass_prediction(self):
-        """Ensures all 4 target satellites have computed upcoming passes."""
-        passes = self.sim.predict_upcoming_passes()
-        self.assertEqual(len(passes), 4)
-        sat_names = [p["satellite"] for p in passes]
-        self.assertIn("NOAA 15", sat_names)
-        self.assertIn("NOAA 18", sat_names)
-        self.assertIn("NOAA 19", sat_names)
-        self.assertIn("Meteor-M N2-3", sat_names)
+    def test_meteorological_telemetry_ranges(self):
+        """Verifies received atmospheric and cloud telemetry is within valid physical ranges."""
+        data = self.processor.get_meteorological_telemetry()
+        met = data["meteorological_telemetry"]
+        
+        # Cloud-top temperature should be sub-zero cold high altitude (-70C to -10C)
+        self.assertLess(met["cloud_top_temperature_c"], -10.0)
+        self.assertGreater(met["cloud_top_temperature_c"], -75.0)
+        
+        # Surface temperature should be realistic tropical ground temp (20C to 45C)
+        self.assertGreater(met["surface_skin_temperature_c"], 20.0)
+        self.assertLess(met["surface_skin_temperature_c"], 45.0)
+        
+        # Moisture index & cloud cover
+        self.assertGreater(met["precipitable_water_moisture_mm"], 10.0)
+        self.assertGreaterEqual(met["regional_cloud_cover_pct"], 0.0)
+        self.assertLessEqual(met["regional_cloud_cover_pct"], 100.0)
 
-    def test_apt_composite_image_generation(self):
-        """Verifies synthetic NOAA APT multi-spectral composite image is generated as valid PNG bytes."""
-        img_bytes = self.sim.get_latest_apt_image()
+    def test_multispectral_radiometer_channels(self):
+        """Verifies AVHRR radiometer channels (Ch1 Visible, Ch2 Near-IR, Ch4 Thermal IR)."""
+        data = self.processor.get_meteorological_telemetry()
+        ch = data["sensor_channels"]
+        
+        self.assertIn("ch1_visible", ch)
+        self.assertIn("ch2_near_ir", ch)
+        self.assertIn("ch4_thermal_ir", ch)
+        
+        self.assertEqual(ch["ch1_visible"]["wavelength_um"], 0.63)
+        self.assertEqual(ch["ch2_near_ir"]["wavelength_um"], 0.86)
+        self.assertEqual(ch["ch4_thermal_ir"]["wavelength_um"], 10.8)
+
+    def test_apt_composite_weather_image(self):
+        """Verifies synthetic NOAA APT multi-spectral weather composite image is generated as valid PNG bytes."""
+        img_bytes = self.processor.get_latest_apt_image()
         self.assertIsNotNone(img_bytes)
         self.assertGreater(len(img_bytes), 1000)
         # Check PNG magic header: \x89PNG\r\n\x1a\n

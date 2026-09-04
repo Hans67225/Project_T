@@ -91,13 +91,16 @@ async def get_aircraft():
 
 @app.get("/api/space/telemetry")
 async def get_space_telemetry():
-    """Returns real-time LEO weather satellite tracking, Doppler curves, and Friis link budget."""
-    return space_sim.get_live_space_state()
+    """Returns real-time weather satellite downlink status, radiometer channels, and meteorological telemetry."""
+    return space_sim.get_meteorological_telemetry()
 
 @app.get("/api/space/passes")
 async def get_upcoming_passes():
-    """Returns predicted pass schedules for NOAA 15/18/19 and Meteor-M N2-3."""
-    return space_sim.predict_upcoming_passes()
+    """Status endpoint: LEO orbital ephemeris pass prediction is postponed for future phases."""
+    return {
+        "status": "POSTPONED",
+        "message": "LEO orbital mechanics tracking postponed. Operational focus: Weather satellite meteorological reception."
+    }
 
 @app.get("/api/space/imagery/latest")
 async def get_latest_satellite_image():
@@ -160,7 +163,7 @@ async def websocket_telemetry_endpoint(websocket: WebSocket):
     try:
         while True:
             air_data = air_sim.get_readsb_feed()
-            space_data = space_sim.get_live_space_state()
+            space_data = space_sim.get_meteorological_telemetry()
             spectrum_1090 = rf_monitor.sweep_band(1090.0, span_mhz=2.0)
             spectrum_137 = rf_monitor.sweep_band(137.0, span_mhz=1.0)
             
