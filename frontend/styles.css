@@ -325,6 +325,10 @@ body.tactical-body {
   box-shadow: none !important;
 }
 
+.custom-plane-divicon {
+  transition: transform 0.95s linear;
+}
+
 /* Ensure custom icons have transparent background */
 .plane-marker-container {
   display: flex;

@@ -197,6 +197,8 @@ class AirDomainSimulator:
                 # Coordinate updates
                 d_lat = (vy * dt) / r_earth
                 d_lon = (vx * dt) / (r_earth * math.cos(math.radians(ac["lat"])))
+                ac["lat"] += math.degrees(d_lat)
+                ac["lon"] += math.degrees(d_lon)
                 
                 # Altitude bounds: level off descending flights at safe approach altitude
                 ac["alt_baro"] += (ac["vert_rate"] / 60.0) * dt
